@@ -82,19 +82,20 @@ static int prints(char **out, const char *string, int width, int flags) {
     return pc;
 }
 
-// this function print number `i` in the base of `base` (base > 1)
-// `sign` is the flag of print signed number or unsigned number
-// `width` and `flags` mean the length of printed number at least `width`,
-// if the length of number is less than `width`, choose PAD_ZERO or PAD_RIGHT
-// `letbase` means uppercase('A') or lowercase('a') when using hex
-// you may need to call `prints`
-// you do not need to print prefix like "0x", "0"...
-// Remember the most significant digit is printed first.
+/**
+ * this function print number `i` in the base of `base` (base > 1)
+ * `sign` is the flag of print signed number or unsigned number
+ * `width` and `flags` mean the length of printed number should be at least
+ * `width`, if the length of number is less than `width`, choose PAD_ZERO or
+ * PAD_RIGHT `letbase` means uppercase('A') or lowercase('a') when using hex you
+ * may need to call `prints` you do not need to print prefix like "0x", "0"...
+ * Remember the most significant digit is printed first.
+ */
 static int printk_write_num(char **out, long long i, int base, int sign,
                             int width, int flags, int letbase) {
     char print_buf[PRINT_BUF_LEN];
     char *s;
-    int t, neg = 0, pc = 0;
+    int neg = 0, pc = 0;
     unsigned long long u = i;
 
     if (i == 0) {
@@ -107,10 +108,23 @@ static int printk_write_num(char **out, long long i, int base, int sign,
         neg = 1;
         u = -i;
     }
-    // TODO: fill your code here
     // store the digitals in the buffer `print_buf`:
     // 1. the last postion of this buffer must be '\0'
     // 2. the format is only decided by `base` and `letbase` here
+
+    if (neg) {
+        if (width && ((flags & PAD_ZERO) || (flags & PAD_RIGHT))) {
+            simple_outputchar(out, '-');
+            ++pc;
+            --width;
+        } else {
+            // *--s = '-';
+            simple_outputchar(out, '-');
+            ++pc;
+        }
+        sign = 0;
+    }
+
     char alphaTable[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                          '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     char alphaTableUp[] = {'0', '1', '2', '3', '4', '5', '6', '7',
@@ -131,12 +145,12 @@ static int printk_write_num(char **out, long long i, int base, int sign,
             num /= base;
         }
     } else {
-        unsigned long long num = i;
+        unsigned long long num = u;
         while (num != 0) {
             num /= base;
             len++;
         }
-        num = i;
+        num = u;
         for (int idx = 0; idx < len; idx++) {
             if (letbase == 'a')
                 print_buf[len - idx - 1] = alphaTable[num % base];
@@ -147,16 +161,6 @@ static int printk_write_num(char **out, long long i, int base, int sign,
     }
     print_buf[len] = '\0';
     s = print_buf;
-
-    if (neg) {
-        if (width && (flags & PAD_ZERO)) {
-            simple_outputchar(out, '-');
-            ++pc;
-            --width;
-        } else {
-            *--s = '-';
-        }
-    }
 
     return pc + prints(out, s, width, flags);
 }

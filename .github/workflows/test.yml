@@ -12,3 +12,5 @@ jobs:
         run: make build
       - name: Test
         run: make grade
+      - name: Extra Test
+        run: python ./scripts/grade-lab1-extra.py
