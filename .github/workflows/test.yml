@@ -10,7 +10,9 @@ jobs:
         run: sudo apt update && sudo apt-get install qemu-system-aarch64
       - name: Build
         run: make build
-      - name: Test
-        run: make grade
-      - name: Extra Test
+      - name: Test print, stack
+        run: python ./scripts/grade-lab1
+      - name: Extra print Test
         run: python ./scripts/grade-lab1-extra.py
+      - name: Buddy Unit Test
+        run: ./scripts/test_buddy.sh
