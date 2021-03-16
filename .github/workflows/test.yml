@@ -16,3 +16,5 @@ jobs:
         run: python ./scripts/grade-lab1-extra.py
       - name: Buddy Unit Test
         run: ./scripts/test_buddy.sh
+      - name: Page Table Unit Test
+        run: cd tests/mm/page_table && make && ./test_aarch64_page_table

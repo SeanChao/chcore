@@ -16,7 +16,9 @@
 +--------+
 ```
 
-The start address of pool is `free_mem_start` in `mm_init()`.
+At compilation time, the memory layout is determined in the linker script `linker-aarch64.lds.in`, including `img_start`, `img_end`.
+
+At run time, the start address of pool is `free_mem_start` in `mm_init()`.
 
 ## Buddy System
 
