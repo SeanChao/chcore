@@ -5,19 +5,6 @@
 #include <common/macro.h>
 #include <common/util.h>
 
-static int check(struct phys_mem_pool *pool) {
-    int page_num = 524288;
-    int sum = 0;
-    for (int i = 0; i < BUDDY_MAX_ORDER; i++) {
-        int list_nb_free = pool->free_lists[i].nr_free;
-        if (pool->free_lists[i].nr_free < 0 ||
-            pool->free_lists[i].nr_free >
-                pool->pool_mem_size / (BUDDY_PAGE_SIZE * (1 << i)))
-            return 1;
-        sum += list_nb_free * (1 << i);
-    }
-}
-
 /*
  * The layout of a phys_mem_pool:
  * | page_metadata are (an array of struct page) | alignment pad | usable memory
@@ -136,7 +123,6 @@ struct page *buddy_get_pages(struct phys_mem_pool *pool, u64 order) {
     //  Hints: Find the corresponding free_list which can allocate 1<<order
     //  continuous pages and don't forget to split the list node after
     //  allocation
-    check(pool);
     struct page *page = NULL;
     if (order < 0 || order > BUDDY_MAX_ORDER) return NULL;
     struct free_list *list = &pool->free_lists[order];
@@ -152,7 +138,6 @@ struct page *buddy_get_pages(struct phys_mem_pool *pool, u64 order) {
     pool->free_lists[page->order].nr_free--;
     list_del(node_ptr);
     page->allocated = 1;
-    check(pool);
     return page;
 }
 

@@ -17,4 +17,5 @@ jobs:
       - name: Buddy Unit Test
         run: ./scripts/test_buddy.sh
       - name: Page Table Unit Test
-        run: cd tests/mm/page_table && make && ./test_aarch64_page_table
+        working-directory: tests/mm/page_table
+        run: cmake . && make && ./test_aarch64_page_table
