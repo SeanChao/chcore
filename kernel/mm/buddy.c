@@ -15,7 +15,7 @@
 void init_buddy(struct phys_mem_pool *pool, struct page *start_page,
                 vaddr_t start_addr, u64 page_num) {
     int order;
-    int page_idx;
+    u64 page_idx;
     struct page *page;
 
     /* Init the physical memory pool. */
@@ -73,10 +73,14 @@ static struct page *get_buddy_chunk(struct phys_mem_pool *pool,
     /* Check whether the buddy_chunk_addr belongs to pool. */
     if ((buddy_chunk_addr < pool->pool_start_addr) ||
         (buddy_chunk_addr >= (pool->pool_start_addr + pool->pool_mem_size))) {
+        kinfo("order%d %lx's buddy chunk addr %lx is not within %lx and %lx\n",
+              order, chunk_addr, buddy_chunk_addr, pool->pool_start_addr,
+              pool->pool_start_addr + pool->pool_mem_size);
+        kinfo("xor with %lx, \n", (1UL << (u64)(order + BUDDY_PAGE_SIZE_ORDER)));
         return NULL;
     }
-
-    return virt_to_page(pool, (void *)buddy_chunk_addr);
+    struct page *p = virt_to_page(pool, (void *)buddy_chunk_addr);
+    return p;
 }
 
 /**
@@ -157,7 +161,7 @@ static struct page *merge_page(struct phys_mem_pool *pool, struct page *page) {
     if (order == BUDDY_MAX_ORDER - 1) return page;
     struct page *merged = NULL;
     struct page *buddy_page = get_buddy_chunk(pool, page);
-    if (!buddy_page->allocated && buddy_page->order == order) {
+    if (buddy_page && !buddy_page->allocated && buddy_page->order == order) {
         merged = MIN(page, buddy_page);
         // buddy is not allocated, merge
         int new_order = order + 1;
@@ -169,8 +173,9 @@ static struct page *merge_page(struct phys_mem_pool *pool, struct page *page) {
         merged->order = new_order;
         pool->free_lists[order].nr_free -= 2;
         pool->free_lists[new_order].nr_free += 1;
-    } else
+    } else {
         return page;
+    }
     return merge_page(pool, merged);
 }
 
