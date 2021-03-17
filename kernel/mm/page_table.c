@@ -135,6 +135,8 @@ static int get_next_ptp(ptp_t *cur_ptp, u32 level, vaddr_t va, ptp_t **next_ptp,
         return BLOCK_PTP;
 }
 
+#define PTP_ERROR(code) ((code) != NORMAL_PTP && (code) != BLOCK_PTP)
+
 /*
  * Translate a va to pa, and get its pte for the flags
  */
@@ -152,7 +154,6 @@ static int get_next_ptp(ptp_t *cur_ptp, u32 level, vaddr_t va, ptp_t **next_ptp,
  */
 int query_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t *pa, pte_t **entry) {
     int err;
-    // ptp_t *cur_ptp = virt_to_phys(pgtbl);
     ptp_t *cur_ptp = (ptp_t *)pgtbl;
     pte_t *pte = NULL;
     err = get_next_ptp(cur_ptp, 0, va, &cur_ptp, &pte, false);
@@ -164,6 +165,43 @@ int query_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t *pa, pte_t **entry) {
     err = get_next_ptp(cur_ptp, 3, va, &cur_ptp, &pte, false);
     if (err) return err;
     *pa = pte->l3_page.pfn;
+    *entry = pte;
+    return 0;
+}
+
+int query_in_pgtbl_level(vaddr_t *pgtbl, vaddr_t va, paddr_t *pa, pte_t **entry,
+                         u32 level) {
+    int err;
+    ptp_t *cur_ptp = (ptp_t *)pgtbl;
+    pte_t *pte = NULL;
+    err = get_next_ptp(cur_ptp, 0, va, &cur_ptp, &pte, false);
+    if (err) return err;
+    switch (level) {
+        case 3:
+            err = get_next_ptp(cur_ptp, 1, va, &cur_ptp, &pte, false);
+            if (PTP_ERROR(err)) return err;
+            err = get_next_ptp(cur_ptp, 2, va, &cur_ptp, &pte, false);
+            if (PTP_ERROR(err)) return err;
+            err = get_next_ptp(cur_ptp, 3, va, &cur_ptp, &pte, false);
+            if (PTP_ERROR(err)) return err;
+            *pa = pte->l3_page.pfn;
+            break;
+        case 2:
+            err = get_next_ptp(cur_ptp, 1, va, &cur_ptp, &pte, false);
+            if (PTP_ERROR(err)) return err;
+            err = get_next_ptp(cur_ptp, 2, va, &cur_ptp, &pte, false);
+            if (PTP_ERROR(err)) return err;
+            *pa = (pte->l2_block.pfn << 21) | (va & 0x1FFFFF);
+            break;
+        case 1:
+            err = get_next_ptp(cur_ptp, 1, va, &cur_ptp, &pte, false);
+            if (PTP_ERROR(err)) return err;
+            *pa = pte->l1_block.pfn;
+            break;
+        default:
+            BUG_ON("Error: unexpected level\n");
+            break;
+    }
     *entry = pte;
     return 0;
 }
@@ -187,10 +225,8 @@ int map_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
                        vmr_prop_t flags) {
     // TODO: len
     int level = 4;
-    int n_pages = len / 4094;
+    int n_pages = len / PAGE_SIZE;
     for (int pg = 0; pg < n_pages; pg++) {
-        va += pg * 4096;
-        pa += pg * 4096;
         ptp_t *cur_pgtbl = (ptp_t *)pgtbl;
         ptp_t *ptp = NULL;
         pte_t *pte = NULL;
@@ -204,6 +240,51 @@ int map_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
         }
         pte->l3_page.pfn = pa;
         set_pte_flags(pte, flags, USER_PTE);
+        va += PAGE_SIZE;
+        pa += PAGE_SIZE;
+    }
+    flush_tlb();
+    return 0;
+}
+
+/**
+ * The same as `map_range_in_pgtbl`, but map 2M pages
+ *
+ * @param pgtbl ptr for the first level page table(pgd) virtual address
+ * @param va start virtual address
+ * @param pa start physical address
+ * @param len mapping size
+ * @param flag corresponding attribution bit
+ *
+ */
+int map_range_in_pgtbl_2m(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
+                          vmr_prop_t flags) {
+    int level = 3;
+    const int page_size = L2_PAGE_SIZE;
+    int n_pages = len / page_size;
+    for (int pg = 0; pg < n_pages; pg++) {
+        ptp_t *cur_pgtbl = (ptp_t *)pgtbl;
+        ptp_t *ptp = NULL;
+        pte_t *pte = NULL;
+        for (int i = 0; i < level; i++) {
+            int err = get_next_ptp(cur_pgtbl, i, va, &ptp, &pte, true);
+            // kinfo("visit pg=%d, level=%d, ptp=%x, pte=%x\n", pg, i, ptp,
+            // pte);
+            if (err != NORMAL_PTP && err != BLOCK_PTP) {
+                return err;
+            }
+            cur_pgtbl = ptp;
+        }
+        pte->l2_block.pfn = pa >> 21;
+        pte->l2_block.is_table = 0;
+        pte->l2_block.UXN = 1;
+        pte->l2_block.AF = 1;
+        pte->l2_block.SH = 3;
+        pte->l2_block.attr_index = 4;
+        pte->l2_block.is_table = 0;
+        pte->l2_block.is_valid = 1;
+        va += page_size;
+        pa += page_size;
     }
     flush_tlb();
     return 0;
@@ -225,9 +306,8 @@ int unmap_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, size_t len) {
     int err = 0;
     pte_t *pte;
     ptp_t *cur_pt = (ptp_t *)pgtbl;
-    int n_pages = len / 4094;
+    int n_pages = len / PAGE_SIZE;
     for (int pg = 0; pg < n_pages; pg++) {
-        va += 0 * 4096;
         err = get_next_ptp(cur_pt, 0, va, &cur_pt, &pte, false);
         if (err) return err;
         err = get_next_ptp(cur_pt, 1, va, &cur_pt, &pte, false);
@@ -237,6 +317,7 @@ int unmap_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, size_t len) {
         err = get_next_ptp(cur_pt, 3, va, &cur_pt, &pte, false);
         if (err) return err;
         pte->l3_page.is_valid = false;
+        va += PAGE_SIZE;
     }
     flush_tlb();
     return 0;

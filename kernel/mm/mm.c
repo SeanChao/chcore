@@ -49,14 +49,19 @@ unsigned long get_ttbr1(void) {
  *
  */
 void map_kernel_space(vaddr_t va, paddr_t pa, size_t len) {
-    // <lab2>
-
-    // </lab2>
+    vaddr_t *pt = (vaddr_t *)get_ttbr1();
+    kinfo("map_kernel_space: ttbr1=%lx va=%lx, pa=%lx\n", pt, va, pa);
+    vmr_prop_t flags = VMR_READ | VMR_WRITE;
+    map_range_in_pgtbl_2m(pt, va, pa, len, flags);
 }
 
 void kernel_space_check(void) {
     unsigned long kernel_val;
     for (unsigned long i = 128; i < 256; i++) {
+        // vaddr_t va = (unsigned long *)(KBASE + (i << 21));
+        // paddr_t pa;
+        // query_in_pgtbl_level(get_ttbr1(), va, &pa, NULL, 2);
+        // kinfo("visit *%lx -> pa %lx\n", va, pa);
         kernel_val = *(unsigned long *)(KBASE + (i << 21));
         kinfo("kernel_val: %lx\n", kernel_val);
     }
