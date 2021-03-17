@@ -16,3 +16,5 @@ jobs:
         run: python ./scripts/grade-lab1-extra.py
       - name: All Test
         run: make grade
+      - name: DEBUG
+        run: cat chcore.out
