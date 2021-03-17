@@ -13,9 +13,9 @@ jobs:
       - name: Test print, stack
         run: python ./scripts/grade-lab1
       - name: Extra print Test
-        continue-on-error: true
         run: python ./scripts/grade-lab1-extra.py
       - name: All Test
+        continue-on-error: true
         run: make grade
       - name: DEBUG
         run: cat chcore.out
