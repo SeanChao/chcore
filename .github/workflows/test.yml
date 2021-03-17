@@ -14,8 +14,5 @@ jobs:
         run: python ./scripts/grade-lab1
       - name: Extra print Test
         run: python ./scripts/grade-lab1-extra.py
-      - name: Buddy Unit Test
-        run: ./scripts/test_buddy.sh
-      - name: Page Table Unit Test
-        working-directory: tests/mm/page_table
-        run: cmake . && make && ./test_aarch64_page_table
+      - name: All Test
+        run: make grade
