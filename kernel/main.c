@@ -13,9 +13,8 @@
 #include <common/kprint.h>
 #include <common/machine.h>
 #include <common/macro.h>
-#include <common/uart.h>
-#include <common/machine.h>
 #include <common/mm.h>
+#include <common/uart.h>
 
 ALIGN(STACK_ALIGNMENT)
 char kernel_stack[PLAT_CPU_NUM][KERNEL_STACK_SIZE];
@@ -60,11 +59,11 @@ void main(void *addr) {
 
     stack_test(5);
 
-	mm_init();
-	kinfo("mm init finished\n");
+    mm_init();
+    kinfo("mm init finished\n");
 
-	break_point();
-	return;
+    break_point();
+    return;
 
     /* Should provide panic and use here */
     BUG("[FATAL] Should never be here!\n");

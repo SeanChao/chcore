@@ -58,10 +58,6 @@ void map_kernel_space(vaddr_t va, paddr_t pa, size_t len) {
 void kernel_space_check(void) {
     unsigned long kernel_val;
     for (unsigned long i = 128; i < 256; i++) {
-        // vaddr_t va = (unsigned long *)(KBASE + (i << 21));
-        // paddr_t pa;
-        // query_in_pgtbl_level(get_ttbr1(), va, &pa, NULL, 2);
-        // kinfo("visit *%lx -> pa %lx\n", va, pa);
         kernel_val = *(unsigned long *)(KBASE + (i << 21));
         kinfo("kernel_val: %lx\n", kernel_val);
     }
@@ -71,6 +67,7 @@ void kernel_space_check(void) {
 struct phys_mem_pool global_mem;
 
 void mm_init(void) {
+    kinfo("mm_init...\n");
     vaddr_t free_mem_start = 0;
     struct page *page_meta_start = NULL;
     u64 npages = 0;
