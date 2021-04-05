@@ -14,3 +14,16 @@ end
 
 add-symbol-file-auto ./build/kernel.img
 add-symbol-file-auto ./user/build/ramdisk/hello.bin
+file ./build/kernel.img
+set directories ./build
+
+define nir
+    ni
+    p/x $x29
+    p/x $sp
+end
+
+define showstack
+    p/x $x29
+    p/x $sp
+end
