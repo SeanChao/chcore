@@ -9,7 +9,7 @@ jobs:
       - name: Setup
         run: sudo apt update && sudo apt-get install qemu-system-aarch64
       - name: Build
-        run: make build
+        run: make
       - name: Test print, stack
         run: python ./scripts/grade-lab1
       - name: Extra print Test
