@@ -15,6 +15,7 @@
 #include <common/util.h>
 #endif
 #include <common/errno.h>
+#include <common/kprint.h>
 #include <common/macro.h>
 #include <common/mm.h>
 #include <common/mmu.h>
@@ -223,6 +224,9 @@ int query_in_pgtbl_level(vaddr_t *pgtbl, vaddr_t va, paddr_t *pa, pte_t **entry,
  */
 int map_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
                        vmr_prop_t flags) {
+    kdebug(
+        "mm/page_table/map_range_in_pgtbl: table@0x%lx va->pa 0x%lx->0x%lx\n",
+        pgtbl, va, pa);
     int level = 4;
     int n_pages = len / PAGE_SIZE;
     for (int pg = 0; pg < n_pages; pg++) {
@@ -237,12 +241,16 @@ int map_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
             cur_pgtbl = ptp;
             set_pte_flags(pte, flags, USER_PTE);
         }
-        pte->l3_page.pfn = pa;
+        pte->l3_page.is_valid = 1;
+        pte->l3_page.is_page = 1;
+        pte->l3_page.pfn = pa >> L3_INDEX_SHIFT;  // this kind of assignment
+                                                  // only takes low address bits
         set_pte_flags(pte, flags, USER_PTE);
         va += PAGE_SIZE;
         pa += PAGE_SIZE;
     }
     flush_tlb();
+    kdebug("map range ok\n");
     return 0;
 }
 

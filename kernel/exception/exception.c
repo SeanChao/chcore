@@ -11,7 +11,7 @@
  */
 
 #include "exception.h"
-#include "esr.h"
+
 #include <common/kprint.h>
 #include <common/types.h>
 #include <common/util.h>
@@ -19,37 +19,49 @@
 #include <exception/pgfault.h>
 #include <sched/sched.h>
 
-void exception_init_per_cpu(void)
-{
-	/**
-	 * Lab3: Your code here
-	 * Setup the exception vector with the asm function written in exception.S
-	 */
-	disable_irq();
+#include "esr.h"
+
+void exception_init_per_cpu(void) {
+    /**
+     * Lab3: Your code here
+     * Setup the exception vector with the asm function written in exception.S
+     */
+    disable_irq();
+    set_exception_vector();
+    enable_irq();
 }
 
-void exception_init(void)
-{
-	exception_init_per_cpu();
+void exception_init(void) {
+    exception_init_per_cpu();
 }
 
-void handle_entry_c(int type, u64 esr, u64 address)
-{
-	/* ec: exception class */
-	u32 esr_ec = GET_ESR_EL1_EC(esr);
+void handle_entry_c(int type, u64 esr, u64 address) {
+    /* ec: exception class */
+    u32 esr_ec = GET_ESR_EL1_EC(esr);
 
-	kdebug
-	    ("Interrupt type: %d, ESR: 0x%lx, Fault address: 0x%lx, EC 0b%b\n",
-	     type, esr, address, esr_ec);
-	/* Dispatch exception according to EC */
-	switch (esr_ec) {
-		/*
-		 * Lab3: Your code here
-		 * Handle exceptions as required in the lab document. Checking exception codes in
-		 * esr.h may help.
-		 */
-	default:
-		kdebug("Unsupported Exception ESR %lx\n", esr);
-		break;
-	}
+    kdebug("Interrupt type: %d, ESR: 0x%lx, Fault address: 0x%lx, EC 0b%b\n",
+           type, esr, address, esr_ec);
+    /* Dispatch exception according to EC */
+    switch (esr_ec) {
+            /*
+             * Lab3: Your code here
+             * Handle exceptions as required in the lab document. Checking
+             * exception codes in esr.h may help.
+             */
+        case ESR_EL1_EC_UNKNOWN:
+            kinfo(UNKNOWN);
+            sys_exit(-12);
+            break;
+        case ESR_EL1_EC_DABT_LEL:
+            do_page_fault(esr, address);
+            break;
+        case ESR_EL1_EC_DABT_CEL:
+            do_page_fault(esr, address);
+            break;
+        default:
+            kdebug("Unsupported Exception ESR %lx\n", esr);
+            kdebug("Please implement esr_ec=%b\n", esr_ec);
+            break;
+    }
+    return;
 }

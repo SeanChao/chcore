@@ -209,6 +209,11 @@ static int simple_vsprintf(char **out, const char *format, va_list ap) {
                 }
             }
             switch (*format) {
+                case ('b'):
+                    u.i = va_arg(ap, int);
+                    pc += printk_write_num(out, u.i, 2, 1, width, flags, 'a');
+                    break;
+
                 case ('d'):
                     u.i = va_arg(ap, int);
                     pc += printk_write_num(out, u.i, 10, 1, width, flags, 'a');
