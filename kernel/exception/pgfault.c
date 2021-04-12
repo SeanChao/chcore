@@ -60,8 +60,6 @@ void do_page_fault(u64 esr, u64 fault_ins_addr) {
 int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr) {
     struct vmregion *vmr;
     struct pmobject *pmo;
-    paddr_t pa;
-    u64 offset;
 
     /*
      * Lab3: your code here
@@ -81,10 +79,11 @@ int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr) {
      */
     vmr = find_vmr_for_va(vmspace, fault_addr);
     if (!vmr) return -ENOMAPPING;
-    if (vmr->pmo->type != PMO_ANONYM) {
+    pmo = vmr->pmo;
+    if (pmo->type != PMO_ANONYM) {
         return -ENOMAPPING;
     }
-    vaddr_t va = get_pages(0);  // allocate a page, order = 0
+    vaddr_t va = (vaddr_t)get_pages(0);  // allocate a page, order = 0
     int err = map_range_in_pgtbl(vmspace->pgtbl, fault_addr, virt_to_phys(va),
                                  PAGE_SIZE, vmr->perm);
     if (err) return -ENOMAPPING;

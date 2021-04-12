@@ -32,7 +32,10 @@ stack is set to `stack_base + stack_size`. `prepare_env` initializes the thread 
 
 Finally, `thread_init` initializes the thread and adds it to the process.
 
+The user process entry point is `_start_c` in `user/lib/libmain.c`. In the compiled asssembly, the call to `main` is compiled into `b`, when main is finished no return address is set. So the pc is set to default `$x30 = 0`, triggers page fault indefinitely.
+
 ## System Call
 
 System calls are sync exceptions triggerred by the user process.
-In `sync_el0_64`, a system-call has `esr_el1 >> #ESR_EL1_EC_SHIFT == #ESR_EL1_EC_SVC_64`, so it jumps to `el0_syscall`.
+In `sync_el0_64`, a system-call has `esr_el1 >> #ESR_EL1_EC_SHIFT == #ESR_EL1_EC_SVC_64`, so it jumps to `el0_syscall`.  
+The handlers are registered in an array `syscall_table`. `el0_syscall` use syscall number to index into `syscall_table` and run the target function.
