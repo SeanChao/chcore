@@ -11,8 +11,6 @@
  */
 
 #include "exception.h"
-#include "esr.h"
-#include "timer.h"
 
 #include <common/kprint.h>
 #include <common/lock.h>
@@ -23,42 +21,44 @@
 #include <exception/pgfault.h>
 #include <sched/sched.h>
 
+#include "esr.h"
+#include "timer.h"
+
 u8 irq_handle_type[MAX_IRQ_NUM];
 
-void exception_init_per_cpu(void)
-{
-	/**
-	 * Lab4
-	 *
-	 * Uncomment the timer_init() when you are handling preemptive
-	 * shceduling
-	 */
-	// timer_init();
+void exception_init_per_cpu(void) {
+    /**
+     * Lab4
+     *
+     * Uncomment the timer_init() when you are handling preemptive
+     * shceduling
+     */
+    // timer_init();
 
-	/**
-	 * Lab3: Your code here
-	 * Setup the exception vector with the asm function written in exception.S
-	 */
-	disable_irq();
+    /**
+     * Lab3: Your code here
+     * Setup the exception vector with the asm function written in exception.S
+     */
+    disable_irq();
     set_exception_vector();
     enable_irq();
 }
 
-void exception_init(void)
-{
-	exception_init_per_cpu();
-	memset(irq_handle_type, HANDLE_KERNEL, MAX_IRQ_NUM);
+void exception_init(void) {
+    exception_init_per_cpu();
+    memset(irq_handle_type, HANDLE_KERNEL, MAX_IRQ_NUM);
 }
 
-void handle_entry_c(int type, u64 esr, u64 address)
-{
-	/** 
-	 * Lab4
-	 * Acquire the big kernel lock, if the exception is not from kernel
-	 */
-
-	/* ec: exception class */
-	u32 esr_ec = GET_ESR_EL1_EC(esr);
+void handle_entry_c(int type, u64 esr, u64 address) {
+    /**
+     * Lab4
+     * Acquire the big kernel lock, if the exception is not from kernel
+     */
+    if (type != 1) {
+        lock_kernel();
+    }
+    /* ec: exception class */
+    u32 esr_ec = GET_ESR_EL1_EC(esr);
 
     kdebug("Interrupt type: %d, ESR: 0x%lx, Fault address: 0x%lx, EC 0b%b\n",
            type, esr, address, esr_ec);
