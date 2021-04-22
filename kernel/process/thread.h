@@ -28,6 +28,8 @@ extern struct thread *current_threads[PLAT_CPU_NUM];
 #define ROOT_THREAD_STACK_SIZE		(0x10000)
 #define ROOT_THREAD_PRIO		MAX_PRIO - 1
 
+#define INVALID_AFF(aff) ((aff < 0 && aff != NO_AFF) || aff >= PLAT_CPU_NUM)
+
 struct thread {
 	struct list_head node;	// link threads in a same process
 	struct list_head ready_queue_node;	// link threads in a ready queue

@@ -383,7 +383,10 @@ int sys_set_affinity(u64 thread_cap, s32 aff) {
      * Lab4
      * Finish the sys_set_affinity
      */
-    return -1;
+    if (INVALID_AFF(aff)) return -2;
+    if (!thread || !thread->thread_ctx) return -3;
+    thread->thread_ctx->affinity = aff;
+    return 0;
 }
 
 int sys_get_affinity(u64 thread_cap) {
@@ -403,5 +406,8 @@ int sys_get_affinity(u64 thread_cap) {
      * Lab4
      * Finish the sys_get_affinity
      */
-    return -1;
+    if (!thread || !thread->thread_ctx) return -3;
+    aff = thread->thread_ctx->affinity;
+    if (INVALID_AFF(aff)) return -2;
+    return aff;
 }

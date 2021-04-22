@@ -48,7 +48,7 @@ u32 sys_getc(void)
  */
 u32 sys_get_cpu_id(void)
 {
-	return -1;
+	return smp_get_cpu_id();
 }
 
 /*
@@ -57,7 +57,7 @@ u32 sys_get_cpu_id(void)
  * to functions accordingly
  */
 const void *syscall_table[NR_SYSCALL] = {
-	[0 ... NR_SYSCALL - 1] = sys_debug,
+	// [0 ... NR_SYSCALL - 1] = sys_debug,
 	/* lab3 syscalls finished */
 
 	[SYS_getc] = sys_getc,
