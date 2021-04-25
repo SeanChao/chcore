@@ -31,7 +31,7 @@ void exception_init_per_cpu(void) {
      * Lab4
      *
      * Uncomment the timer_init() when you are handling preemptive
-     * shceduling
+     * scheduling
      */
     timer_init();
 

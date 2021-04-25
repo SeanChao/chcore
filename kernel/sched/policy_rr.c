@@ -61,6 +61,7 @@ int rr_sched_enqueue(struct thread *thread) {
     list_append(&thread->ready_queue_node, &rr_ready_queue[cpu]);
     thread->thread_ctx->cpuid = cpu;
     thread->thread_ctx->state = TS_READY;
+    // kdebug("rr: enqueue %lx\n", thread);
     return 0;
 }
 
@@ -139,7 +140,7 @@ int rr_sched(void) {
     // Choose a thread
     struct thread *target_thread = rr_sched_choose_thread();
     rr_sched_refill_budget(target_thread, DEFAULT_BUDGET);
-    kdebug("rr_sched: pause %lx, run %lx\n", current_thread, target_thread);
+    // kdebug("rr_sched: pause %lx, run %lx\n", current_thread, target_thread);
     switch_to_thread(target_thread);
     return 0;
 }

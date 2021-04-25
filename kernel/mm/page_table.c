@@ -312,9 +312,9 @@ int map_range_in_pgtbl_2m(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
 int unmap_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, size_t len) {
     int err = 0;
     pte_t *pte;
-    ptp_t *cur_pt = (ptp_t *)pgtbl;
     int n_pages = len / PAGE_SIZE;
     for (int pg = 0; pg < n_pages; pg++) {
+        ptp_t *cur_pt = (ptp_t *)pgtbl;
         err = get_next_ptp(cur_pt, 0, va, &cur_pt, &pte, false);
         if (err) return err;
         err = get_next_ptp(cur_pt, 1, va, &cur_pt, &pte, false);
