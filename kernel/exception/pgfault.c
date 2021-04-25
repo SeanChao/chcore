@@ -87,6 +87,6 @@ int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr) {
     int err = map_range_in_pgtbl(vmspace->pgtbl, fault_addr, virt_to_phys(va),
                                  PAGE_SIZE, vmr->perm);
     if (err) return -ENOMAPPING;
-    kdebug("handle_trans_fault: add=%lx, err=%lx\n", fault_addr, err);
+    // kdebug("handle_trans_fault: add=%lx, err=%lx\n", fault_addr, err);
     return 0;
 }

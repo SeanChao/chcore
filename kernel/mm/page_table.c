@@ -224,9 +224,9 @@ int query_in_pgtbl_level(vaddr_t *pgtbl, vaddr_t va, paddr_t *pa, pte_t **entry,
  */
 int map_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
                        vmr_prop_t flags) {
-    kdebug(
-        "mm/page_table/map_range_in_pgtbl: table@0x%lx va->pa 0x%lx->0x%lx\n",
-        pgtbl, va, pa);
+    // kdebug(
+    //     "mm/page_table/map_range_in_pgtbl: table@0x%lx va->pa 0x%lx->0x%lx\n",
+    //     pgtbl, va, pa);
     int level = 4;
     int n_pages = len / PAGE_SIZE;
     for (int pg = 0; pg < n_pages; pg++) {
@@ -250,7 +250,7 @@ int map_range_in_pgtbl(vaddr_t *pgtbl, vaddr_t va, paddr_t pa, size_t len,
         pa += PAGE_SIZE;
     }
     flush_tlb();
-    kdebug("map range ok\n");
+    // kdebug("map range ok\n");
     return 0;
 }
 

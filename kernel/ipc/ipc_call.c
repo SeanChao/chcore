@@ -11,85 +11,78 @@
  */
 
 #include <common/errno.h>
+#include <common/kmalloc.h>
 #include <common/kprint.h>
 #include <common/macro.h>
-#include <common/util.h>
-#include <ipc/ipc.h>
-#include <exception/exception.h>
-#include <common/kmalloc.h>
 #include <common/mm.h>
 #include <common/uaccess.h>
+#include <common/util.h>
+#include <exception/exception.h>
+#include <ipc/ipc.h>
 #include <process/thread.h>
 #include <sched/context.h>
 #include <sched/sched.h>
 
 /**
- * A helper function to transfer all the ipc_msg's capbilities of client's
+ * A helper function to transfer all the ipc_msg's capabilities of client's
  * process to server's process
  */
 #define MAX_CAP_TRANSFER 8
-int ipc_send_cap(struct ipc_connection *conn, ipc_msg_t * ipc_msg)
-{
-	int i, r;
-	u64 cap_slot_number;
-	u64 cap_slots_offset;
-	u64 *cap_buf;
+int ipc_send_cap(struct ipc_connection *conn, ipc_msg_t *ipc_msg) {
+    int i, r;
+    u64 cap_slot_number;
+    u64 cap_slots_offset;
+    u64 *cap_buf;
 
-	r = copy_from_user((char *)&cap_slot_number,
-			   (char *)&ipc_msg->cap_slot_number,
-			   sizeof(cap_slot_number));
-	if (r < 0)
-		goto out;
-	if (likely(cap_slot_number == 0)) {
-		r = 0;
-		goto out;
-	} else if (cap_slot_number >= MAX_CAP_TRANSFER) {
-		r = -EINVAL;
-		goto out;
-	}
+    r = copy_from_user((char *)&cap_slot_number,
+                       (char *)&ipc_msg->cap_slot_number,
+                       sizeof(cap_slot_number));
+    if (r < 0) goto out;
+    if (likely(cap_slot_number == 0)) {
+        r = 0;
+        goto out;
+    } else if (cap_slot_number >= MAX_CAP_TRANSFER) {
+        r = -EINVAL;
+        goto out;
+    }
 
-	r = copy_from_user((char *)&cap_slots_offset,
-			   (char *)&ipc_msg->cap_slots_offset,
-			   sizeof(cap_slots_offset));
-	if (r < 0)
-		goto out;
+    r = copy_from_user((char *)&cap_slots_offset,
+                       (char *)&ipc_msg->cap_slots_offset,
+                       sizeof(cap_slots_offset));
+    if (r < 0) goto out;
 
-	cap_buf = kmalloc(cap_slot_number * sizeof(*cap_buf));
-	if (!cap_buf) {
-		r = -ENOMEM;
-		goto out;
-	}
+    cap_buf = kmalloc(cap_slot_number * sizeof(*cap_buf));
+    if (!cap_buf) {
+        r = -ENOMEM;
+        goto out;
+    }
 
-	r = copy_from_user((char *)cap_buf, (char *)ipc_msg + cap_slots_offset,
-			   sizeof(*cap_buf) * cap_slot_number);
-	if (r < 0)
-		goto out;
+    r = copy_from_user((char *)cap_buf, (char *)ipc_msg + cap_slots_offset,
+                       sizeof(*cap_buf) * cap_slot_number);
+    if (r < 0) goto out;
 
-	for (i = 0; i < cap_slot_number; i++) {
-		u64 dest_cap;
+    for (i = 0; i < cap_slot_number; i++) {
+        u64 dest_cap;
 
-		kdebug("[IPC] send cap:%d\n", cap_buf[i]);
-		dest_cap = cap_copy(current_process, conn->target->process,
-				    cap_buf[i], false, 0);
-		if (dest_cap < 0)
-			goto out_free_cap;
-		cap_buf[i] = dest_cap;
-	}
+        kdebug("[IPC] send cap:%d\n", cap_buf[i]);
+        dest_cap = cap_copy(current_process, conn->target->process, cap_buf[i],
+                            false, 0);
+        if (dest_cap < 0) goto out_free_cap;
+        cap_buf[i] = dest_cap;
+    }
 
-	r = copy_to_user((char *)ipc_msg + cap_slots_offset, (char *)cap_buf,
-			 sizeof(*cap_buf) * cap_slot_number);
-	if (r < 0)
-		goto out_free_cap;
+    r = copy_to_user((char *)ipc_msg + cap_slots_offset, (char *)cap_buf,
+                     sizeof(*cap_buf) * cap_slot_number);
+    if (r < 0) goto out_free_cap;
 
-	kfree(cap_buf);
-	return 0;
+    kfree(cap_buf);
+    return 0;
 
- out_free_cap:
-	for (--i; i >= 0; i--)
-		cap_free(conn->target->process, cap_buf[i]);
-	kfree(cap_buf);
- out:
-	return r;
+out_free_cap:
+    for (--i; i >= 0; i--) cap_free(conn->target->process, cap_buf[i]);
+    kfree(cap_buf);
+out:
+    return r;
 }
 
 /**
@@ -100,49 +93,48 @@ int ipc_send_cap(struct ipc_connection *conn, ipc_msg_t * ipc_msg)
  *
  * Replace the place_holder to correct value!
  */
-static u64 thread_migrate_to_server(struct ipc_connection *conn, u64 arg)
-{
-	struct thread *target = conn->target;
+static u64 thread_migrate_to_server(struct ipc_connection *conn, u64 arg) {
+    struct thread *target = conn->target;
 
-	conn->source = current_thread;
-	target->active_conn = conn;
-	current_thread->thread_ctx->state = TS_WAITING;
-	obj_put(conn);
+    conn->source = current_thread;
+    target->active_conn = conn;
+    current_thread->thread_ctx->state = TS_WAITING;
+    obj_put(conn);
 
-	/**
-	 * Lab4
-	 * This command set the sp register, read the file to find which field
-	 * of the ipc_connection stores the stack of the server thread?
-	 * */
-	arch_set_thread_stack(target, LAB4_IPC_BLANK);
-	/**
-	 * Lab4
-	 * This command set the ip register, read the file to find which field
-	 * of the ipc_connection stores the instruction to be called when switch
-	 * to the server?
-	 * */
-	arch_set_thread_next_ip(target, LAB4_IPC_BLANK);
-	/**
-	 * Lab4
-	 * The argument set by sys_ipc_call;
-	 */
-	arch_set_thread_arg(target, LAB4_IPC_BLANK);
+    /**
+     * Lab4
+     * This command set the sp register, read the file to find which field
+     * of the ipc_connection stores the stack of the server thread?
+     * */
+    arch_set_thread_stack(target, conn->server_stack_top);
+    /**
+     * Lab4
+     * This command set the ip register, read the file to find which field
+     * of the ipc_connection stores the instruction to be called when switch
+     * to the server?
+     * */
+    arch_set_thread_next_ip(target, conn->target->server_ipc_config->callback);
+    /**
+     * Lab4
+     * The argument set by sys_ipc_call;
+     */
+    arch_set_thread_arg(target, arg);
 
-	/**
-	 * Passing the scheduling context of the current thread to thread of
-	 * connection
-	 */
-	target->thread_ctx->sc = current_thread->thread_ctx->sc;
+    /**
+     * Passing the scheduling context of the current thread to thread of
+     * connection
+     */
+    target->thread_ctx->sc = current_thread->thread_ctx->sc;
 
-	/**
-	 * Switch to the server
-	 */
-	switch_to_thread(target);
-	eret_to_thread(switch_context());
+    /**
+     * Switch to the server
+     */
+    switch_to_thread(target);
+    eret_to_thread(switch_context());
 
-	/* Function never return */
-	BUG_ON(1);
-	return 0;
+    /* Function never return */
+    BUG_ON(1);
+    return 0;
 }
 
 /**
@@ -152,49 +144,61 @@ static u64 thread_migrate_to_server(struct ipc_connection *conn, u64 arg)
  * vmspace), do not forget to change the virtual address to server's vmspace.
  * This function should never return!
  */
-u64 sys_ipc_call(u32 conn_cap, ipc_msg_t * ipc_msg)
-{
-	struct ipc_connection *conn = NULL;
-	u64 arg;
-	int r;
+u64 sys_ipc_call(u32 conn_cap, ipc_msg_t *ipc_msg) {
+    struct ipc_connection *conn = NULL;
+    u64 arg;
+    int r;
 
-	conn = obj_get(current_thread->process, conn_cap, TYPE_CONNECTION);
-	if (!conn) {
-		r = -ECAPBILITY;
-		goto out_fail;
-	}
+    conn = obj_get(current_thread->process, conn_cap, TYPE_CONNECTION);
+    if (!conn) {
+        r = -ECAPBILITY;
+        goto out_fail;
+    }
 
-	/**
-	 * Lab4
-	 * Here, you need to transfer all the capbiliies of client thread to
-	 * capbilities in server thread in the ipc_msg.
-	 */
+    /**
+     * Lab4
+     * Here, you need to transfer all the capabilities of client thread to
+     * capabilities in server thread in the ipc_msg.
+     */
+    ipc_send_cap(conn, ipc_msg);
+    r = copy_to_user((char *)&ipc_msg->server_conn_cap,
+                     (char *)&conn->server_conn_cap, sizeof(u64));
+    if (r < 0) goto out_obj_put;
 
-	r = copy_to_user((char *)&ipc_msg->server_conn_cap,
-			 (char *)&conn->server_conn_cap, sizeof(u64));
-	if (r < 0)
-		goto out_obj_put;
+    /**
+     * Lab4
+     * The arg is actually the 64-bit arg for ipc_dispatcher
+     * Then what value should the arg be?
+     * */
+    arg = conn->buf.server_user_addr;
+    thread_migrate_to_server(conn, arg);
 
-	/**
-	 * Lab4
-	 * The arg is actually the 64-bit arg for ipc_dispatcher
-	 * Then what value should the arg be?
-	 * */
-	arg = LAB4_IPC_BLANK;
-	thread_migrate_to_server(conn, arg);
-
-	BUG("This function should never\n");
- out_obj_put:
-	obj_put(conn);
- out_fail:
-	return r;
+    BUG("This function should never\n");
+out_obj_put:
+    obj_put(conn);
+out_fail:
+    return r;
 }
 
 /**
  * Lab4
  * Implement your sys_ipc_reg_call
  * */
-u64 sys_ipc_reg_call(u32 conn_cap, u64 arg0)
-{
-	return -1;
+u64 sys_ipc_reg_call(u32 conn_cap, u64 arg0) {
+    struct ipc_connection *conn = NULL;
+    u64 arg;
+    int r;
+
+    conn = obj_get(current_thread->process, conn_cap, TYPE_CONNECTION);
+    if (!conn) {
+        r = -ECAPBILITY;
+        goto out_fail;
+    }
+
+    arg = arg0;
+    thread_migrate_to_server(conn, arg);
+
+    BUG("This function should never\n");
+out_fail:
+    return r;
 }

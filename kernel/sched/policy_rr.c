@@ -127,8 +127,8 @@ static inline void rr_sched_refill_budget(struct thread *target, u32 budget) {
 int rr_sched(void) {
     if (current_thread && current_thread->thread_ctx &&
         current_thread->thread_ctx->sc->budget > 0) {
-        kinfo("no schedule: budget=%u\n",
-              current_thread->thread_ctx->sc->budget);
+        // kinfo("no schedule: budget=%u\n",
+        //       current_thread->thread_ctx->sc->budget);
         return -1;
     }
     // check if cpu is running some thread
