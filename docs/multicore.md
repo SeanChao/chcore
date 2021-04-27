@@ -16,3 +16,5 @@ Stack like `kernel_stack` is shared, so these CPU cores cannot start concurrentl
 ## Locks
 
 When calling `unlock_kernel` in `exception_return`, no registers are saved because they are not used.
+
+When an idle thread is running in kernel, lock should be acquired because `unlock` will be called if it's scheduled to some user thread.
