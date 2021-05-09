@@ -54,7 +54,8 @@ void handle_entry_c(int type, u64 esr, u64 address) {
      * Lab4
      * Acquire the big kernel lock, if the exception is not from kernel
      */
-    if (type != 1) {
+    kdebug("error type = %d\n", type);
+    if (type > ERROR_EL1h) {
         lock_kernel();
     }
     /* ec: exception class */

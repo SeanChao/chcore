@@ -34,7 +34,8 @@ void handle_irq(int type) {
      *	The irq is not from the kernel
      * 	The thread being interrupted is an idle thread.
      */
-    if (type != 1) {
+    if (type > ERROR_EL1h || (current_thread && current_thread->thread_ctx &&
+                              current_thread->thread_ctx->type == TYPE_IDLE)) {
         lock_kernel();
     }
     plat_handle_irq();
