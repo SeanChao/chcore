@@ -98,7 +98,8 @@ void unlock(struct lock *lock) {
      * Unlock the ticket lock here
      * Your code should be no more than 5 lines
      */
-    atomic_fetch_add_32(&lock->owner, 1);
+    // atomic_fetch_add_32(&lock->owner, 1);
+    lock->owner++;
 }
 
 /**

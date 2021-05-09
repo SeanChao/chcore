@@ -53,7 +53,6 @@ int rr_sched_enqueue(struct thread *thread) {
     if (thread->thread_ctx->type == TYPE_IDLE) return 0;
     // if thread state is TS_READY, return error
     if (thread->thread_ctx->state == TS_READY) return -2;
-    if (thread == &idle_threads[smp_get_cpu_id()]) return -3;
     u32 cpu_id = smp_get_cpu_id();
     s32 aff = thread->thread_ctx->affinity;
     if (INVALID_AFF(aff)) return -4;
@@ -73,7 +72,7 @@ int rr_sched_enqueue(struct thread *thread) {
  */
 int rr_sched_dequeue(struct thread *thread) {
     if (thread == NULL || thread->thread_ctx == NULL) return -1;
-    if (thread == &idle_threads[smp_get_cpu_id()]) return -2;
+    if (thread->thread_ctx->type == TYPE_IDLE) return -2;
     if (thread->thread_ctx->state == TS_RUNNING) return -3;
     if (INVALID_AFF(thread->thread_ctx->affinity)) return -4;
     // Remove the thread and set its state to TS_INTER
@@ -132,7 +131,7 @@ int rr_sched(void) {
         return -1;
     }
     // check if cpu is running some thread
-    if (current_thread && current_thread != &idle_threads[smp_get_cpu_id()]) {
+    if (current_thread && current_thread->thread_ctx->type != TYPE_IDLE) {
         // Some thread is running, add it to queue
         rr_sched_enqueue(current_thread);
         current_thread->thread_ctx->state = TS_READY;
@@ -140,7 +139,7 @@ int rr_sched(void) {
     // Choose a thread
     struct thread *target_thread = rr_sched_choose_thread();
     rr_sched_refill_budget(target_thread, DEFAULT_BUDGET);
-    // kdebug("rr_sched: pause %lx, run %lx\n", current_thread, target_thread);
+    kdebug("rr_sched: [%d] pause %lx, run %lx\n", smp_get_cpu_id(), current_thread, target_thread);
     switch_to_thread(target_thread);
     return 0;
 }
