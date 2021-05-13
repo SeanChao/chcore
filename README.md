@@ -1,6 +1,11 @@
 # ChCore
 
+[![Build](https://github.com/SeanChao/chcore/actions/workflows/build.yml/badge.svg)](https://github.com/SeanChao/chcore/actions/workflows/build.yml)
+[![Test](https://github.com/SeanChao/chcore/actions/workflows/test.yml/badge.svg)](https://github.com/SeanChao/chcore/actions/workflows/test.yml)
+
 This is the repository of ChCore labs in SE315, 2020 Spring.
+
+[DOCS](docs.md)
 
 ## build 
   - `make` or `make build`

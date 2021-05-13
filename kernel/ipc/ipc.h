@@ -75,5 +75,3 @@ u32 sys_register_client(u32 server_cap, u64 vm_config_ptr);
 u64 sys_ipc_call(u32 conn_cap, ipc_msg_t * ipc_msg);
 u64 sys_ipc_reg_call(u32 conn_cap, u64 arg);
 void sys_ipc_return(u64 ret);
-
-#define LAB4_IPC_BLANK 0

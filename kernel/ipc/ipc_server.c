@@ -74,7 +74,7 @@ static int register_server(struct thread *server, u64 callback, u64 max_client,
 		r = -EINVAL;
 		goto out_free_conn_bmp;
 	}
-
+	kinfo("register done\n");
 	return r;
 
  out_free_conn_bmp:
