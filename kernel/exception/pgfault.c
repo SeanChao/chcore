@@ -45,7 +45,7 @@ void do_page_fault(u64 esr, u64 fault_ins_addr) {
 
             ret = handle_trans_fault(current_thread->vmspace, fault_addr);
             if (ret != 0) {
-                kinfo("pgfault at 0x%p failed\n", fault_addr);
+                kinfo("pgfault at 0x%p failed, inst 0x%p\n", fault_addr, fault_ins_addr);
                 sys_exit(ret);
             }
             break;

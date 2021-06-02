@@ -10,6 +10,8 @@ jobs:
         run: sudo apt update && sudo apt-get install qemu-system-aarch64
       - name: Build
         run: make
+      - name: Build User Space Apps
+        run: make user
       - name: Extra print Test
         run: python ./scripts/grade-lab1-extra.py
       - name: All Test

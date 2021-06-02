@@ -5,104 +5,115 @@
 // int fs_stat(const char *pathname, struct stat *statbuf);
 // int fs_getdents(int fd, struct dirent *dirp, size_t count);
 
-int fs_server_init(u64 cpio_start)
-{
-	init_tmpfs();
-	usys_fs_load_cpio(cpio_start);
-	return tfs_load_image((char *)cpio_start);
+int fs_server_init(u64 cpio_start) {
+    init_tmpfs();
+    usys_fs_load_cpio(cpio_start);
+    return tfs_load_image((char *)cpio_start);
 }
 
-int fs_server_mkdir(const char *path)
-{
-	struct inode *dirat = NULL;
-	const char *leaf = path;
-	int err;
+int fs_server_mkdir(const char *path) {
+    struct inode *dirat = NULL;
+    const char *leaf = path;
+    int err;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	// TODO: your code here
-	return err;
+    // TODO: your code here
+    printf("tfs mkdir path=%s\n", path);
+    err = tfs_namex(&dirat, &leaf, 0);
+    if (err) return err;
+    err = tfs_mkdir(dirat, leaf, strlen(leaf));
+    return err;
 }
 
-int fs_server_creat(const char *path)
-{
-	struct inode *dirat = NULL;
-	const char *leaf = path;
-	int err;
+int fs_server_creat(const char *path) {
+    struct inode *dirat = NULL;
+    const char *leaf = path;
+    int err;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	// TODO: your code here
-	return 0;
+    // TODO: your code here
+    printf("tfs create path=%s\n", path);
+    err = tfs_namex(&dirat, &leaf, 0);
+    if (err) return err;
+    err = tfs_creat(dirat, leaf, strlen(leaf));
+    return 0;
 }
 
-int fs_server_unlink(const char *path)
-{
-	struct inode *dirat = NULL;
-	const char *leaf = path;
-	int err;
+int fs_server_unlink(const char *path) {
+    struct inode *dirat = NULL;
+    const char *leaf = path;
+    int err;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	// TODO: your code here
-	return err;
+    // TODO: your code here
+    err = tfs_namex(&dirat, &leaf, 0);
+    if (err) return err;
+    err = tfs_remove(dirat, leaf, strlen(leaf));
+    return err;
 }
 
-int fs_server_rmdir(const char *path)
-{
-	struct inode *dirat = NULL;
-	const char *leaf = path;
-	int err;
+int fs_server_rmdir(const char *path) {
+    struct inode *dirat = NULL;
+    const char *leaf = path;
+    int err;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	// TODO: your code here
-	return err;
+    // TODO: your code here
+    err = tfs_namex(&dirat, &leaf, 0);
+    if (err) return err;
+    err = tfs_remove(dirat, leaf, strlen(leaf));
+    return err;
 }
 
 /* use absolute path, offset and count to read directly */
-int fs_server_read(const char *path, off_t offset, void *buf, size_t count)
-{
-	struct inode *inode;
-	int ret = -ENOENT;
+int fs_server_read(const char *path, off_t offset, void *buf, size_t count) {
+    struct inode *inode;
+    int ret = -ENOENT;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	// TODO: your code here
-	return ret;
+    // TODO: your code here
+    inode = tfs_open_path(path);
+    if (!inode) return -ENOENT;
+    ret = tfs_file_read(inode, offset, buf, count);
+    return ret;
 }
 
 /* use absolute path, offset and count to write directly */
 int fs_server_write(const char *path, off_t offset, const void *buf,
-		    size_t count)
-{
-	struct inode *inode;
-	int ret = -ENOENT;
+                    size_t count) {
+    struct inode *inode;
+    int ret = -ENOENT;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	// TODO: your code here
-	return ret;
+    // TODO: your code here
+    inode = tfs_open_path(path);
+    if (!inode) return -EEXIST;
+    ret = tfs_file_write(inode, offset, buf, count);
+    return ret;
 }
 
-ssize_t fs_server_get_size(const char *path)
-{
-	struct inode *inode;
-	int ret = -ENOENT;
+ssize_t fs_server_get_size(const char *path) {
+    struct inode *inode;
+    int ret = -ENOENT;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	inode = tfs_open_path(path);
-	if (inode)
-		ret = inode->size;
-	return ret;
+    inode = tfs_open_path(path);
+    if (inode) ret = inode->size;
+    return ret;
 }
 
 /* Scan several dirent structures from the directory referred to by the path
@@ -116,18 +127,18 @@ ssize_t fs_server_get_size(const char *path)
  * The caller should call this function over and over again until it returns 0
  * */
 int fs_server_scan(const char *path, unsigned int start, void *buf,
-		   unsigned int count)
-{
-	struct inode *inode;
+                   unsigned int count) {
+    struct inode *inode;
 
-	BUG_ON(!path);
-	BUG_ON(*path != '/');
+    BUG_ON(!path);
+    BUG_ON(*path != '/');
 
-	inode = tfs_open_path(path);
-	if (inode) {
-		if (inode->type == FS_DIR)
-			return tfs_scan(inode, start, buf, buf + count);
-		return -ENOTDIR;
-	}
-	return -ENOENT;
+    inode = tfs_open_path(path);
+    BUG_ON(!inode);
+    if (inode) {
+        if (inode->type == FS_DIR)
+            return tfs_scan(inode, start, buf, buf + count);
+        return -ENOTDIR;
+    }
+    return -ENOENT;
 }

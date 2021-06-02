@@ -71,3 +71,6 @@ void *cpio_extract_single(const void *addr, const char *target,
 							    size_t size,
 							    void *data),
 			  void *data);
+
+#define C_ISDIR 0040000
+#define C_ISREG 0100000

@@ -39,6 +39,7 @@ static int test_scan()
 			printf("%s\n", str);
 			vp += p->d_reclen;
 		}
+		printf("scan ret=%d\n", ret);
 	} while (ret != 0);
 	printf("/tar has %d files\n", start);
 	start = 0;
@@ -139,16 +140,22 @@ static int test_deepfile()
 
 int main()
 {
-	TEST_FUNC(test_fs_server_init);
-	TEST_FUNC(test_scan);
-	TEST_FUNC(test_mkdir);
-	TEST_FUNC(test_creat);
-	TEST_FUNC(test_write_read);
+    printf("TEST start\n");
+    TEST_FUNC(test_fs_server_init);
+    printf("INIT PASS\n");
+    TEST_FUNC(test_scan);
+    printf("SCAN PASS\n");
+    TEST_FUNC(test_mkdir);
+    printf("MKDIR PASS\n");
+    TEST_FUNC(test_creat);
+    printf("CREAT PASS\n");
+    TEST_FUNC(test_write_read);
+    printf("WR PASS\n");
 
-	TEST_FUNC(test_deepfile);
+    TEST_FUNC(test_deepfile);
 
-	TEST_FUNC(test_unlink);
-	TEST_FUNC(test_rmdir);
+    TEST_FUNC(test_unlink);
+    TEST_FUNC(test_rmdir);
 
-	return 0;
+    return 0;
 }

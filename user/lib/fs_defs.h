@@ -1,4 +1,5 @@
 #pragma once
+#include "type.h"
 
 #define TMPFS_MAP_BUF	1
 #define TMPFS_SCAN	2
@@ -16,6 +17,7 @@
 #define TMPFS_INFO_VADDR 0x200000
 #define TMPFS_SCAN_BUF_VADDR 0x20000000
 #define TMPFS_READ_BUF_VADDR 0x30000000
+#define TMPFS_WRITE_BUF_VADDR 0x40000000
 
 enum FS_REQ {
 	FS_REQ_OPEN = 0,

@@ -196,16 +196,22 @@ void rr_top(void) {
     // lock_kernel();
 
     for (cpuid = 0; cpuid < PLAT_CPU_NUM; cpuid++) {
+        bool print_idle = false;
         printk("===== CPU %d =====\n", cpuid);
         thread = current_threads[cpuid];
         if (thread != NULL) {
             print_thread(thread);
+            if (thread->thread_ctx->type == TYPE_IDLE) print_idle = true;
         }
         if (!list_empty(&rr_ready_queue[cpuid])) {
             for_each_in_list(thread, struct thread, ready_queue_node,
                              &rr_ready_queue[cpuid]) {
                 print_thread(thread);
+                if (thread->thread_ctx->type == TYPE_IDLE) print_idle = true;
             }
+        }
+        if (!print_idle) {
+            print_thread(&idle_threads[cpuid]);
         }
     }
     // unlock_kernel();

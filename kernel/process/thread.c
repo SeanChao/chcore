@@ -39,7 +39,7 @@ static int thread_init(struct thread *thread, struct process *process,
     init_thread_ctx(thread, stack, pc, prio, type, aff);
     /* add to process */
     list_add(&thread->node, &process->thread_list);
-    kdebug("thread_init: stack=0x%lx, pc=0x%lx\n", stack, pc);
+    kdebug("thread_init: stack=0x%lx, pc=0x%lx thread_addr=%p\n", stack, pc, thread);
 
     return 0;
 }

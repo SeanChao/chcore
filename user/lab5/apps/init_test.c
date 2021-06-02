@@ -45,14 +45,19 @@ int main()
 	boot_fs();
 
 	test_readline();
+	printf("=== TEST ECHO ===\n");
 	test_echo();
 
+	printf("=== TEST LS ===\n");
 	builtin_cmd("ls");
+	printf("=== TEST LS TAR ===\n");
 	builtin_cmd("ls tar");
+	printf("=== TEST CAT ===\n");
 	builtin_cmd("cat tar/cat_test.txt");
 	test_readline();
 	test_readline();
 
+	printf("=== IPCMEM ===\n");
 	run_cmd("ipc_mem.bin");
 	printf("\n");
 	builtin_cmd("top");
